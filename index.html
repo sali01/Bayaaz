@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دستہ الحُسینی</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#111827"> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+    <style>
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+        #imageViewer { max-height: 65vh; touch-action: none; }
+
+        /* The background configuration for your whole app */
+        body {
+            /* Replace with either image_1.png or image_2.png */
+            background-image: url('logo-dah-transparent.png');
+            background-size: 30%; /* Adjust opacity as needed */
+            background-repeat: no-repeat;
+            background-position: center 20vh; /* Position slightly below the header */
+            background-color: #111827; /* Dark base color */
+            transition: background-position 0.2s ease-out; /* Smooth slide for mobile keyboards */
+        }
+    </style>
+</head>
+<body class="text-gray-100 font-sans min-h-screen flex flex-col">
+
+    <nav class="bg-gray-800 border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex items-center justify-between p-3">
+            <img src="logo-dah-transparent.png" alt="Dasta Logo" class="h-10 w-auto">
+            
+            <div class="flex gap-4">
+                <button id="nav-search" onclick="switchPage('search-page')" class="flex flex-col items-center text-emerald-400 font-medium">
+                    <span class="text-xl">🔍</span>
+                    <span class="text-xs mt-1">Search</span>
+                </button>
+                <button id="nav-upload" onclick="switchPage('upload-page')" class="flex flex-col items-center text-gray-400 font-medium">
+                    <span class="text-xl">📤</span>
+                    <span class="text-xs mt-1">Upload</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- App Engine Frame Viewports -->
+    <main class="flex-1 max-w-md w-full mx-auto p-4 pb-12">
+        
+        <!-- MODULE 1: SEARCH & ZOOM ENGINE -->
+        <div id="search-page" class="page-section active space-y-6">
+            <h2 class="text-2xl font-bold text-center text-emerald-400">Search Noha</h2>
+            
+            <div class="relative">
+                <input type="text" id="nohaSearchInput" placeholder="Type Noha name (English or Urdu)..." 
+                       class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                       oninput="onSearchType()">
+                <ul id="autocompleteList" class="absolute left-0 right-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg max-h-60 overflow-y-auto hidden z-50 shadow-2xl divide-y divide-gray-700"></ul>
+            </div>
+
+            <!-- Optimized Image View Deck Container -->
+            <div id="viewerContainer" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700">
+                    <h3 id="activeNohaTitle" class="font-semibold text-emerald-300 text-sm"></h3>
+                    <button onclick="resetZoom()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs">Reset Zoom</button>
+                </div>
+                
+                <div class="bg-black rounded-xl overflow-hidden border border-gray-700 flex items-center justify-center p-2 relative min-h-[380px]">
+                    <img id="imageViewer" src="" alt="Noha Script Sheet" class="w-full h-auto object-contain transition-transform duration-75 cursor-move">
+                </div>
+                <p class="text-center text-xs text-gray-500">💡 Two fingers to pinch/zoom. Rotate device sideways for maximum widescreen text size.</p>
+            </div>
+        </div>
+
+        <!-- MODULE 2: OFFLINE QUEUE METADATA UPLOADER -->
+        <div id="upload-page" class="page-section space-y-6">
+            <h2 class="text-2xl font-bold text-center text-emerald-400">Upload New Noha Asset</h2>
+            
+            <form id="uploadForm" class="space-y-4 bg-gray-800 p-5 rounded-xl border border-gray-700">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Generated Primary Key String</label>
+                    <input type="text" id="nohaId" readonly class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-gray-500 cursor-not-allowed font-mono text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Noha Name (Bilingual Formatting)</label>
+                    <input type="text" id="nohaName" required placeholder="e.g., Aa Asghar Aaja - آ اصغر آجا" 
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Image Asset File</label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-700 border-dashed rounded-lg cursor-pointer bg-gray-900 hover:bg-gray-800">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <span class="text-2xl mb-1">📸</span>
+                                <p class="text-sm text-gray-400"><span class="font-semibold">Select File</span> or Capture Photo</p>
+                                <p id="fileFeedback" class="text-xs text-emerald-400 mt-1"></p>
+                            </div>
+                            <input type="file" id="nohaFile" accept="image/*" required class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                    Commit Document Data
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Firebase Integration and Engine Controller Core -->
+    <script type="module">
+        // Placeholder credentials for UAT testing
+        const firebaseConfig = {
+            apiKey: "PLACEHOLDER_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        let db = null;
+        let storage = null;
+        let isMockMode = firebaseConfig.apiKey.includes("PLACEHOLDER");
+        
+        let nohaDatabase = [];
+        let panzoomInstance = null;
+
+        // PWA Service Worker Registration Hook
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered Successfully.', reg))
+                    .catch(err => console.error('Worker Registration Aborted:', err));
+            });
+        }
+
+        // Initialize App Engine routing based on access credentials
+        if (isMockMode) {
+            console.warn("⚠️ Firebase configuration missing! Running in local UAT sandbox mode.");
+            
+            // Load preexisting local data out of storage to mimic database behavior
+            const localData = localStorage.getItem("uat_noha_db");
+            nohaDatabase = localData ? JSON.parse(localData) : [];
+            
+        } else {
+            // Load production modules dynamically only when explicit keys are supplied
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
+            const { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const { getStorage } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
+
+            const app = initializeApp(firebaseConfig);
+            db = initializeFirestore(app, {
+                localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+            });
+            storage = getStorage(app);
+
+            // Live Database Listener Routing
+            onSnapshot(collection(db, "nohay"), (querySnapshot) => {
+                nohaDatabase = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    nohaDatabase.push({ id: doc.id, ...data });
+
+                    if (navigator.onLine && data.imageUrl) {
+                        fetch(data.imageUrl, { mode: 'no-cors' }).catch(() => {});
+                    }
+                });
+            });
+        }
+
+        // Integrated Form Execution Handler
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nohaId = document.getElementById('nohaId').value;
+            const nohaName = document.getElementById('nohaName').value;
+            const file = document.getElementById('nohaFile').files[0];
+            if (!file) return;
+
+            try {
+                if (isMockMode) {
+                    // Sandbox Mode: Convert files to persistent Base64 layout nodes natively
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onloadend = () => {
+                        nohaDatabase.push({
+                            id: nohaId,
+                            name: nohaName,
+                            imageUrl: reader.result,
+                            createdAt: new Date().toISOString()
+                        });
+                        localStorage.setItem("uat_noha_db", JSON.stringify(nohaDatabase));
+                        alert(`Sandbox Save Success!\n"${nohaName}" committed locally for testing.`);
+                        finalizeUploadFlow();
+                    };
+                } else {
+                    // Direct Firebase Cloud Mode
+                    const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                    const { ref, uploadBytes, getDownloadURL } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js");
+
+                    if (navigator.onLine) {
+                        const storageRef = ref(storage, `nohay_images/${Date.now()}_${file.name}`);
+                        const snapshot = await uploadBytes(storageRef, file);
+                        const downloadURL = await getDownloadURL(snapshot.ref);
+                        
+                        await addDoc(collection(db, "nohay"), {
+                            name: nohaName,
+                            imageUrl: downloadURL,
+                            createdAt: new Date().toISOString()
+                        });
+                        alert("Document pushed online instantly!");
+                    } else {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onloadend = async () => {
+                            await addDoc(collection(db, "nohay"), {
+                                name: nohaName,
+                                imageUrl: reader.result, 
+                                offlinePending: true,
+                                createdAt: new Date().toISOString()
+                            });
+                            alert("Device Offline. Data staged locally for background synchronization.");
+                        };
+                    }
+                    finalizeUploadFlow();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Write Transaction Failed.");
+            }
+        });
+
+        function finalizeUploadFlow() {
+            document.getElementById('uploadForm').reset();
+            document.getElementById('fileFeedback').innerText = '';
+            switchPage('search-page');
+        }
+
+        // Inter-app Frame Toggling SPA Setup
+        window.switchPage = function(pageId) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.getElementById('nav-search').classList.replace('text-emerald-400', 'text-gray-400');
+            document.getElementById('nav-upload').classList.replace('text-emerald-400', 'text-gray-400');
+            
+            if(pageId === 'search-page') document.getElementById('nav-search').classList.replace('text-gray-400', 'text-emerald-400');
+            if(pageId === 'upload-page') {
+                document.getElementById('nav-upload').classList.replace('text-gray-400', 'text-emerald-400');
+                document.getElementById('nohaId').value = 'DB-KEY-' + Math.floor(100000 + Math.random() * 900000);
+            }
+        };
+
+        // File Selection Listener UI Response
+        document.getElementById('nohaFile').addEventListener('change', () => {
+            const input = document.getElementById('nohaFile');
+            document.getElementById('fileFeedback').innerText = input.files.length > 0 ? input.files[0].name : '';
+        });
+
+        // Real-Time Fuzzy Search Box Execution
+        window.onSearchType = function() {
+            const query = document.getElementById('nohaSearchInput').value.toLowerCase();
+            const listContainer = document.getElementById('autocompleteList');
+            listContainer.innerHTML = '';
+
+            if (!query) {
+                listContainer.classList.add('hidden');
+                return;
+            }
+
+            const filtered = nohaDatabase.filter(item => item.name && item.name.toLowerCase().includes(query));
+
+            if(filtered.length > 0) {
+                listContainer.classList.remove('hidden');
+                filtered.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'px-4 py-3 hover:bg-gray-700 cursor-pointer text-sm text-left transition-colors';
+                    li.innerText = item.name;
+                    li.onclick = () => {
+                        document.getElementById('autocompleteList').classList.add('hidden');
+                        document.getElementById('nohaSearchInput').value = item.name;
+                        document.getElementById('activeNohaTitle').innerText = item.name;
+                        
+                        const img = document.getElementById('imageViewer');
+                        img.src = item.imageUrl;
+                        document.getElementById('viewerContainer').classList.remove('hidden');
+
+                        if (panzoomInstance) panzoomInstance.destroy();
+                        setTimeout(() => {
+                            panzoomInstance = Panzoom(img, { maxScale: 5, minScale: 1, contain: 'outside' });
+                        }, 50);
+                    };
+                    listContainer.appendChild(li);
+                });
+            } else {
+                listContainer.classList.add('hidden');
+            }
+        };
+
+        window.resetZoom = function() {
+            if(panzoomInstance) panzoomInstance.reset();
+        };
+    </script>
+</body>
+<!-- Copyright Syed Shujaat Ali-->
+</html>
