@@ -3,12 +3,12 @@
   "name": "Digital Noha Bayaz Application",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3845/3845808.png",
+      "src": "logo-dah-transparent.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3845/3845808.png",
+      "src": "logo-dah-transparent.png",
       "type": "image/png",
       "sizes": "512x512"
     }
